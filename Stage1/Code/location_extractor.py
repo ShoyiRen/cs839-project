@@ -7,7 +7,7 @@ import sklearn
 import random
 from functools import partial
 from sklearn import datasets, svm, metrics, tree, linear_model, ensemble
-from sklearn.model_selection import cross_validate, StratifiedKFold
+from sklearn.model_selection import cross_validate, StratifiedKFold, GridSearchCV
 from sklearn.metrics import recall_score, precision_score, make_scorer
 
 open_tag = '<L>'
@@ -159,7 +159,7 @@ def get_features_labels(examples):
     ret =  list(map(list, zip(features, labels, examples_rm)))
     return ret
 
-def test_score(classifier, test_set):
+def test_score(clf, test_set):
     features_test = []
     labels_test = []
     words = []
@@ -172,7 +172,7 @@ def test_score(classifier, test_set):
             labels_test.append(ex[1])
             words.append(ex[2][0])
 
-    predicted = classifier.predict(features_test)
+    predicted = clf.predict(features_test)
 
     FNs = []
     for item, exp, word in zip(predicted, labels_test, words):
@@ -183,42 +183,7 @@ def test_score(classifier, test_set):
     #print('\n'.join(FNs))
 
     print("\ntest result for classifier %s:\n%s\n"
-          % (classifier, metrics.classification_report(labels_test, predicted)))
-
-def test_score_manual(regression, test_set, normalize=False):
-    features_test = []
-    labels_test = []
-
-    for filename in test_set:
-        file = open(directory + filename, 'r')
-        examples = get_features_labels(get_examples(file))
-        for ex in examples:
-            features_test.append(ex[0])
-            labels_test.append(ex[1])
-    
-    if normalize:
-        features_test = sklearn.preprocessing.normalize(features_test, axis=0)
-    predicted = numpy.sign(regression.predict(features_test))
-    TP = 0
-    TN = 0
-    FP = 0
-    FN = 0
-    for pre, exp in zip(predicted, labels_test):
-        if exp == pre:
-            if exp == 1:
-                TP = TP + 1
-            else:
-                TN = TN + 1
-        else:
-            if exp == 1:
-                FN = FN + 1
-            else:
-                FP = FP + 1
-    precision = TP / (TP + FP)
-    recall = TP / (TP + FN)
-    print('\ntest result for %s:' % regression)
-    print('precision = %f, recall = %f' % (precision, recall))
-    print('f1 = %f' % ((2 * precision * recall) / (precision + recall)))
+          % (clf, metrics.classification_report(labels_test, predicted)))
 
 def cross_validation(clf, features, labels):
     precision_scorer = make_scorer(precision_score, pos_label=1)
@@ -237,7 +202,6 @@ def cross_validation(clf, features, labels):
 
 # training
 directory = './data/'
-
 
 #
 # filenames = os.listdir(directory)
@@ -268,12 +232,6 @@ for filename in I:
         features_train.append(ex[0])
         labels_train.append(ex[1])
 
-# SVM
-clf = svm.SVC(kernel='rbf')
-clf.fit(features_train, labels_train)
-cross_validation(clf, features_train, labels_train)
-test_score(clf, J)
-
 # Decision Tree
 clf = tree.DecisionTreeClassifier(criterion='entropy')
 clf.fit(features_train, labels_train)
@@ -286,17 +244,20 @@ clf.fit(features_train, labels_train)
 cross_validation(clf, features_train, labels_train)
 test_score(clf, J)
 
-# Linear Regression
-# normalize
-features_train_norm = list(features_train)
-features_train_norm = sklearn.preprocessing.normalize(features_train_norm, axis=0)
-reg = linear_model.LinearRegression()
-reg.fit(features_train_norm, labels_train)
-test_score_manual(reg, J)
-
-
 # Logistic Regression
-# normalize
-reg = linear_model.LogisticRegression()
-reg.fit(features_train, labels_train)
-#test_score_manual(reg, J)
+clf = linear_model.LogisticRegressionCV()
+clf.fit(features_train, labels_train)
+cross_validation(clf, features_train, labels_train)
+test_score(clf, J)
+
+# Linear Regression (Ridge regression)
+clf = linear_model.RidgeClassifierCV(normalize=True)
+clf.fit(features_train, labels_train)
+cross_validation(clf, features_train, labels_train)
+test_score(clf, J)
+
+# SVM
+clf = svm.SVC(kernel='rbf')
+clf.fit(features_train, labels_train)
+cross_validation(clf, features_train, labels_train)
+test_score(clf, J)
