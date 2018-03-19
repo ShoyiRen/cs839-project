@@ -1,5 +1,5 @@
 # README
-We acquired the data from two online bookstores. The attributes we got are:
+We acquired the data from two online bookstores. The attributes we got are: <br>
 | Title | Author | ISBN | Publisher | edition | pages | dimension |
 There are 3600 tuples per table.
 
