@@ -7,6 +7,7 @@ Table A has 3646 tuples, and Table B has 3633 tupes.<br>
 Table A, B: original data file <br>
 Table D: tuples pairs survive the blocking step <br>
 labeled.csv: tuple pairs in the sample with the labels, i.e. set G <br>
+labeled.metadata: .metadata file of set G <br>
 SetI.csv: development set <br>
 SetJ.csv: evaluation set
 
